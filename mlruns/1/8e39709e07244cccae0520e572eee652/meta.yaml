@@ -1,0 +1,15 @@
+artifact_uri: file:///home/inherentspice/code/inherentspice/TaxiFareModel/mlruns/1/8e39709e07244cccae0520e572eee652/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: 8e39709e07244cccae0520e572eee652
+run_uuid: 8e39709e07244cccae0520e572eee652
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1655729298586
+status: 1
+tags: []
+user_id: unknown

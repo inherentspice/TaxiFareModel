@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
 
 
 def haversine_vectorized(df,
@@ -50,3 +51,9 @@ def haversine_distance(df,
     c = 2 * np.arcsin(np.sqrt(a))
     haversine_distance = 6371 * c
     return haversine_distance
+
+def make_polynomial_features(df):
+    poly = PolynomialFeatures()
+    poly.fit(df)
+    polynomial = poly.transform(df)
+    return polynomial

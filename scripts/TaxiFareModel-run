@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor, GradientBoostingRegressor, AdaBoostClassifier
-from sklearn.metrics import SCORERS
+from sklearn.ensemble import AdaBoostRegressor, RandomForestRegressor, GradientBoostingRegressor
 from TaxiFareModel.trainer import Trainer
 from TaxiFareModel.data import get_data, clean_data
 from sklearn.model_selection import train_test_split
@@ -18,14 +17,56 @@ compendium = {'linear_regression':lin_reg, 'ridge':ridge, 'lasso':las,
               'random_forest':rand_forest, 'gradient_boosting':grad_boost,
               'Ada_boosting':ada_boost}
 
+best_score = ['', 10000]
+
 for key, value in compendium.items():
-    df = get_data(nrows=1_000)
+    df = get_data(nrows=10_000)
     df_clean = clean_data(df)
     X = df_clean.drop(columns='fare_amount')
     y = df_clean['fare_amount']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     trainer = Trainer(X_train, y_train)
     trainer.run(model_name=key, model=value)
-    print(f"The score of {key} is {trainer.evaluate(X_test, y_test)}")
+    score = trainer.evaluate(X_test, y_test)
+    best_score = [key, score] if best_score[1] > score else best_score
+    print(f"The score of {key} is {score}")
+
+for key, value in compendium.items():
+    df = get_data(nrows=10_000)
+    df_clean = clean_data(df)
+    X = df_clean.drop(columns='fare_amount')
+    y = df_clean['fare_amount']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    trainer = Trainer(X_train, y_train)
+    trainer.run(model_name=key, model=value, center=True)
+    score = trainer.evaluate(X_test, y_test)
+    best_score = [key + " with added feature", score] if best_score[1] > score else best_score
+    print(f"With the added feature of distance to center, the score of {key} is {trainer.evaluate(X_test, y_test)}")
+
+for key, value in compendium.items():
+    df = get_data(nrows=10_000)
+    df_clean = clean_data(df)
+    X = df_clean.drop(columns='fare_amount')
+    y = df_clean['fare_amount']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    trainer = Trainer(X_train, y_train)
+    trainer.run(model_name=key, model=value, poly=True)
+    score = trainer.evaluate(X_test, y_test)
+    best_score = [key + " with polynomial features", score] if best_score[1] > score else best_score
+    print(f"With polynomial features, the score of {key} is {trainer.evaluate(X_test, y_test)}")
+
+for key, value in compendium.items():
+    df = get_data(nrows=10_000)
+    df_clean = clean_data(df)
+    X = df_clean.drop(columns='fare_amount')
+    y = df_clean['fare_amount']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    trainer = Trainer(X_train, y_train)
+    trainer.run(model_name=key, model=value, center=True, poly=True)
+    score = trainer.evaluate(X_test, y_test)
+    best_score = [key + " with all features", score] if best_score[1] > score else best_score
+    print(f"With all features, the score of {key} is {trainer.evaluate(X_test, y_test)}")
+
+print(f"The best model is {best_score[0]} with a score of {best_score[1]}")
 
     # trainer.save_model("test_model")

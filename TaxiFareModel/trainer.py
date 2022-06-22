@@ -1,5 +1,5 @@
 # imports
-from TaxiFareModel.encoders import TimeFeaturesEncoder, DistanceTransformer
+from TaxiFareModel.encoders import TimeFeaturesEncoder, DistanceTransformer, DistanceToCenter, Polynomial
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -34,11 +34,41 @@ class Trainer():
             ('dist_trans', DistanceTransformer()),
             ('stdscaler', StandardScaler())
         ])
+        if kwargs.get('center'):
+            center_pipe = Pipeline([
+                ('center_trans', DistanceToCenter()),
+                ('stdscaler', StandardScaler())
+            ])
+        if kwargs.get('poly'):
+            poly_pipe = Pipeline([
+                ('poly_trans', Polynomial()),
+                ('stdscaler', StandardScaler())
+            ])
         time_pipe = Pipeline([
             ('time_enc', TimeFeaturesEncoder('pickup_datetime')),
             ('ohe', OneHotEncoder(handle_unknown='ignore'))
         ])
-        preproc_pipe = ColumnTransformer([
+        if kwargs.get('center') and kwargs.get('poly'):
+            preproc_pipe = ColumnTransformer([
+            (('distance', dist_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('center', center_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('poly', poly_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('time', time_pipe, ['pickup_datetime']))
+            ])
+        if kwargs.get('center') and not kwargs.get('poly'):
+            preproc_pipe = ColumnTransformer([
+            ('distance', dist_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('center', center_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('time', time_pipe, ['pickup_datetime'])
+        ], remainder="drop")
+        elif kwargs.get('poly') and not kwargs.get('center'):
+            preproc_pipe = ColumnTransformer([
+            ('distance', dist_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('poly', poly_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
+            ('time', time_pipe, ['pickup_datetime'])
+        ], remainder="drop")
+        else:
+            preproc_pipe = ColumnTransformer([
             ('distance', dist_pipe, ["pickup_latitude", "pickup_longitude", 'dropoff_latitude', 'dropoff_longitude']),
             ('time', time_pipe, ['pickup_datetime'])
         ], remainder="drop")

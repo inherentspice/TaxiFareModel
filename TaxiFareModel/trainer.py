@@ -10,6 +10,7 @@ import TaxiFareModel.data
 from memoized_property import memoized_property
 from mlflow.tracking import MlflowClient
 import mlflow
+from joblib import dump
 
 
 MLFLOW_URI = "https://mlflow.lewagon.ai/"
@@ -27,7 +28,7 @@ class Trainer():
         self.y = y
         self.experiment_name = "[SH] [inherentspice] TaxiFareModel + version-1"
 
-    def set_pipeline(self):
+    def set_pipeline(self, **kwargs):
         """defines the pipeline as a class attribute"""
         dist_pipe = Pipeline([
             ('dist_trans', DistanceTransformer()),
@@ -43,15 +44,15 @@ class Trainer():
         ], remainder="drop")
         pipe = Pipeline([
             ('preproc', preproc_pipe),
-            ('linear_model', LinearRegression())
+            (kwargs.get('model_name', 'linear_model'), kwargs.get('model', LinearRegression()))
     ])
         self.pipeline = pipe
         self.mlflow_log_param("estimator", "LinearRegression")
         return self
 
-    def run(self):
+    def run(self, **kwargs):
         """set and train the pipeline"""
-        self.set_pipeline()
+        self.set_pipeline(**kwargs)
         self.pipeline.fit(self.X, self.y)
         return self
 
@@ -85,6 +86,10 @@ class Trainer():
     def mlflow_log_metric(self, key, value):
         self.mlflow_client.log_metric(self.mlflow_run.info.run_id, key, value)
 
+    def save_model(self, model_name='model'):
+        """ Save the trained model into a model.joblib file """
+        dump(self.pipeline, f'{model_name}.joblib')
+
 
 if __name__ == "__main__":
     df = TaxiFareModel.data.get_data(nrows=1_000)
@@ -94,4 +99,5 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
     trainer = Trainer(X_train, y_train)
     trainer.run()
+    trainer.save_model("test_model")
     print(trainer.evaluate(X_test, y_test))
